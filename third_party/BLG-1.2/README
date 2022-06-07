@@ -1,0 +1,193 @@
+This directory contains the BLG code for solving an optimization
+problem with bound constraints and a single linear equality
+constraint using a gradient method. The problem has the form
+
+    min f(x)  subject to  lo <= x <= hi,  a'x = b .
+
+The search direction can be either a gradient projection search direction (GP),
+a Frank-Wolfe search direction (FW), or an affine scaling search direction (AS).
+The affine scaling scheme is developed in the following paper found at
+www.math.ufl.edu/~hager/papers/CG:
+
+Maria D. Gonzalez-Lima, W. W. Hager, and H. Zhang, An Affine-scaling
+Interior-point Method for Continuous Knapsack Constraints with Application
+to Support Vector Machines
+
+The gradient project scheme is developed in the following paper found at
+the same location:
+
+W. W. Hager and H. Zhang, A new active set algorithm for box constrained
+optimization, SIAM Journal on Optimization, 17 (2006), pp. 526-557.
+
+The search direction in BLG is controlled by two parameters in the
+parameter structure which we denote here as Parm:
+
+    Parm->FW = BLGTRUE means always use Frank-Wolfe search direction
+    Parm->FW = BLGFALSE (default) means use either gradient project (GP)
+                 or affine scaling (AS)
+    Parm->GP = BLGTRUE (default) means use GP when Parm->FW is FALSE
+    Parm->GP = BLGFALSE means use AS when Parm->FW is FALSE
+
+In some cases, even though the user specifies a GP or an AS search
+direction, the code will resort to the Frank-Wolfe search direction
+since the solution of the Frank-Wolfe subproblem is a better approximation
+to the true GP or AS search direction than what can is computed by the
+GP or AS routines. This could happen when the BB parameter lambda_k
+is close to zero.  The motivation is roughly the following:
+Projecting a distant vector onto the intersection of a small box and
+an affine space is numerically unstable since each extreme point of
+the feasible set is, in finite precision arithmetic, the same distance
+from the distant point.  By comparing the size of the vector being
+projected to the size of the box, we decide whether it is advantageous
+to switch to a Frank-Wolfe subproblem. In general, the search directions
+given by the solution of Frank-Wolfe subproblem are inferior to those
+given by the GP and AS subproblems. Parm->lpfactor (default 1.e6)
+controls the switch from GP or AS to the Frank-Wolfe search direction.
+Make Parm->lpfactor large to discourage use of the backup Frank-Wolfe
+search direction.
+
+The transfer of function values and gradients to the BLG code is
+done with the BLGobjective structure. BLG passes to the user the following
+information in the BLGobjective structure which we reference here as User:
+
+    User->fold    - final value of f at prior iteration
+    User->x       - current iterate = xold + step*d
+    User->xold    - final x at prior iteration
+    User->gold    - final gradient at prior iteration
+    User->d       - packed array storing nonzero components of search direction
+    User->i       - indices of nonzeros elements of d
+    User->nz      - number of nonzeros in d
+    User->step    - stepsize in the update formula x = xold + step*d
+    User->deriv1  - derivative in search direction evaluated at step = 0
+    User->info    - = -1 at initial request for value/grad
+                    =  0 at first evaluation of function/gradient
+                         during an iteration
+                    =  1 at a later evaluation of function/gradient
+                         during an iteration
+    User->n       - problem dimension
+
+The user's evaluation routine should use this information to evaluate
+either the function value, the gradient, or the product A*d if the
+objective function is specified as quadratic. The elements of the
+objective structure that the user will provide are the following:
+
+    User->p       - if objective function is a quadratic of the form
+                    .5x'Ax + c'x and Parm->QuadCost = TRUE, then when
+                    the Ad routine is invoked, the user should store
+                    the product A*d in p
+    User->f       - if the value or valgrad routines are invoked, then
+                    the function value at x = xold + step*d is stored in f
+    User->g       - if the  gradient or valgrad routines are invoked,
+                    then the gradient at x = xold + step*d is stored in g
+
+The BLG routine operates in two different modes, a subspace mode
+in which each iteration performs a line search in a subspace, and
+a full space mode (default) where all components of x may change
+in the line search. To utilize the subspace mode, set
+
+    Parm->Subspace = BLGTRUE
+
+The subspace size is controlled by 2 parameters. By default, the
+subspace size is n*Parm->fsub where the value of fsub is .01. Alternatively,
+an explicit numerical value for the subspace size can be set in Parm->nsub,
+in which case fsub is ignored.
+
+By default, when operating in the subspace mode, BLG will use a
+new subspace in each iteration. In some situations, however, it may
+be advantageous to repeat a subspace and solve the subspace problem
+more accurately before advancing to a new subspace. The decision
+about whether to use a new subspace is based on the error in the
+subspace. If the following condition is satisfied, then the code
+repeats the subspace:
+
+if ( SubErr > MAX (Parm->serr1*Com->tol, Parm->serr2*err) )
+
+Here SubErr is the KKT error in the subspace, tol is the gradient tolerance
+specified by the user, and err is the global KKT error. By default,
+serr1 and serr2 are set to huge numbers so that the subspace does
+not repeat. To encourage repetition of a subspace, use smaller
+values for serr1 and serr2 such as serr1 = 0.25 and serr2 = 0.10.
+
+When choosing the indices in the subspace, there is an option for
+giving greater weight to the FREE indices that were contained in
+the previous subspace. The following parameters are employed:
+
+    Parm->bnd_pert - the distance between x_i and a bound before it is
+                     considered FREE
+    Parm->MaxKept  - upper bound on the fraction of indices that can be
+                     retained from the previous subspace
+    Parm->PreAmp   - the amplification weight attached to prior free indices
+
+BLG can exploit the following special structure:
+
+1. If the upper and lower bounds are scalars, not vectors,
+   then set Uparm->bnd_is_scalar = BLGTRUE. In this case,
+   *lo and *hi each contain one entry, the scalar lower and
+   upper bounds.  Uparm->bnd_is_scalar = 0 (FALSE) by default.
+
+2. If a = 1 identically, then set Uparm->a_is_1 = BLGTRUE and put
+   NULL for the a argument of BLG. Uparm->a_is_1 = BLGFALSE
+   by default.
+
+3. If f(x) = .5x'Ax + c'x (quadratic objective function),
+   set Uparm->QuadCost = BLGTRUE. One of the input arguments for
+   BLG is a routine we call Ad which should evaluate the product
+   A*d and store it in the BLGobjective structure argument p.
+   Uparm->QuadCost = BLGFALSE by default. For a quadratic
+   objective, the user should provide the gradient at the
+   starting x in BLG argument g0 (= Ax + c). The objective function
+   value returned by BLG is the difference between the
+   starting cost and the final (optimal) cost. If the user
+   wants the code to compute g0 and the final cost (not the
+   cost difference), then store c in the g0 argument and set
+   Parm->QuadLazy = BLGTRUE.
+
+4. For a general objective function, if the function value and gradient
+   can be computed faster together than separately, then execution
+   time can be saved when the user provides a routine we call valgrad that
+   returns both the function value and the gradient at a given point.
+
+The possible routines that the user may give as input to BLG are:
+
+1. value: a routine to evaluate the objective function value
+
+2. grad: a routine to evaluate the objective function gradient,
+
+3. valgrad: a routine to evaluate both the objective function value and gradient
+
+4. Ad: a routine to evaluate the product A*d when the objective function
+   is quadratic with Hessian A.
+
+The user's routines always receive and return a BLGobjective structure.
+
+We also provide codes to interface BLG to the CUTEr
+testing environment. The procedure for incorporating BLG
+in CUTEr is as follows:
+
+1. Put BLG_user.h into $CUTER/common/include
+2. Put BLG_cgma.c into $CUTER/common/src/tools
+3. In $CUTER/common/src/tools, "gcc -lm -O3 -c BLGma.c"
+4. "cp BLGma.o $MYCUTER/double/bin"
+5. In the directory where you put BLG, type "make" and then
+   "cp BLG.o $MYCUTER/double/bin"
+6. "cp BLG.pro $CUTER/build/prototypes"
+   "cp sdBLG.pro $CUTER/build/prototypes"
+7. "cd $MYCUTER/bin"
+8. type the following command twice:
+
+sed -f $MYCUTER/double/config/script.sed $CUTER/build/prototypes/pack.pro > pack
+
+where "pack" is first "BLG" and then "sdBLG"
+
+9. "chmod a+x BLG" and "chmod a+x sdBLG"
+
+You can run a problem by changing to the directory where the sif files
+are stored and typing, for example, "sdBLG ALLINIT"
+
+NOTE: to run valgrind with the code, edit the program "runpackage"
+found in "$MYCUTER/bin" as follows:
+near the end of the program, change "$EXEC/${PAC}min" to
+"valgrind $EXEC/${PAC}min"
+
+William W. Hager
+September 30, 2010
