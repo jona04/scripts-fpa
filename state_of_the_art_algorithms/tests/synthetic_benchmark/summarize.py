@@ -95,9 +95,8 @@ TABLEEND=r'''
 '''
 TABLELINE = r'&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f'
 ENDLINE = r'\\ \hline'
-FPA2FPA = r'& \multicolumn{6}{c||}{\bf \hspace{-8ex}FPA2} & \multicolumn{6}{c||}{\bf \hspace{-8ex}FPA} \\ \hline'
-NEWTONSECANTHEAD = r'& \multicolumn{6}{c||}{\bf \hspace{-8ex}FPA} & \multicolumn{6}{c||}{\bf \hspace{-8ex}Newton} \\ \hline'
-FIXSEARCHHEAD = r'& \multicolumn{6}{c||}{\bf Variable fixing} & \multicolumn{6}{c||}{\bf Secant} \\ \hline'
+FPANEWTON = r'& \multicolumn{6}{c||}{\bf \hspace{-8ex}FPA} & \multicolumn{6}{c||}{\bf \hspace{-8ex}Newton} \\ \hline'
+FIXSECANT = r'& \multicolumn{6}{c||}{\bf Variable fixing} & \multicolumn{6}{c||}{\bf Secant} \\ \hline'
 
 def print_latex_table(size, solvers, data):
     '''Print a latex representation of the test data as a table. 
@@ -117,11 +116,11 @@ def latex_report(test, data):
     '''Print the full report of the test data in latex format.
     '''
     # Compute statistics.
-    print NEWTONSECANTHEAD
+    print FPANEWTON
     for size in sizes:
         print_latex_table(size, ['FPA','Newton'], data)
 
-    print FIXSEARCHHEAD
+    print FIXSECANT
     for size in sizes:
         print_latex_table(size, ['Variable fixing', 'Secant'], data)
 
