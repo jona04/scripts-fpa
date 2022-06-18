@@ -70,57 +70,64 @@ LATEXEND=r'''
 \end{document}
 '''
 TABLESTART=r'''
-\begin{table}[t]
-\begin{center}
+\begin{table}[!htbp]
+\caption{Uncorrelated test}
 \begin{scriptsize}
-\begin{tabular}{|r||ccc|rrr||rrr|rrr||}
+\hspace{-2cm}
+\begin{tabular}{|r||ccc|rrr|r||rrr|rrr|r|}
 \hline
-\!\!Dimension\!\!\! & 
+Dim. & 
 \multicolumn{3}{c|}{Iterations} &
-\multicolumn{3}{c||}{Time (msec)} & 
+\multicolumn{3}{c|}{Time (msec)} & 
+\multicolumn{1}{c||}{Error} & 
 \multicolumn{3}{c|}{Iterations} &
-\multicolumn{3}{c||}{Time (msec)} \\
-\multicolumn{1}{|c||}{$n$}&\multicolumn{1}{c}{\!\!\!avg\!\!\!}&\multicolumn{1}{c}{\!\!\!\!max\!\!\!}&\multicolumn{1}{c|}{\!\!\!min\!\!\!}
-&\multicolumn{1}{c}{\!\!\!avg\!\!\!}&\multicolumn{1}{c}{\!\!\!\!max\!\!\!}&\multicolumn{1}{c||}{\!\!\!min\!\!\!}
-&\multicolumn{1}{c}{\!\!\!avg\!\!\!}&\multicolumn{1}{c}{\!\!\!\!max\!\!\!}&\multicolumn{1}{c|}{\!\!\!min\!\!\!}
-&\multicolumn{1}{c}{\!\!\!avg\!\!\!}&\multicolumn{1}{c}{\!\!\!\!max\!\!\!}&\multicolumn{1}{c||}{\!\!\!min\!\!\!} \\ \hline
+\multicolumn{3}{c|}{Time (msec)} &
+\multicolumn{1}{c|}{Error} \\
+\multicolumn{1}{|c||}{$n$}&\multicolumn{1}{c}{avg}&\multicolumn{1}{c}{max}&\multicolumn{1}{c|}{min}
+&\multicolumn{1}{c}{avg}&\multicolumn{1}{c}{max}&\multicolumn{1}{c|}{min}
+&\multicolumn{1}{c||}{---}
+&\multicolumn{1}{c}{avg}&\multicolumn{1}{c}{max}&\multicolumn{1}{c|}{min}
+&\multicolumn{1}{c}{avg}&\multicolumn{1}{c}{max}&\multicolumn{1}{c|}{min} 
+&\multicolumn{1}{c|}{---} \\ \hline
 '''
 TABLEEND=r'''
 \end{tabular}
 \vspace{-2ex}
 \caption{%s test}
 \end{scriptsize}
-\end{center}
 \end{table}
 '''
-TABLELINE = r'&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f'
+TABLELINE = r'&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!'
 ENDLINE = r'\\ \hline'
-NEWTONSECANTHEAD = r'& \multicolumn{6}{c||}{\bf \hspace{-8ex}FPA} & \multicolumn{6}{c||}{\bf \hspace{-8ex}Secant} \\ \hline'
-FIXSEARCHHEAD = r'& \multicolumn{6}{c||}{\bf Regula Falsi} & \multicolumn{6}{c||}{\bf Bissection} \\ \hline'
+FPASECANT = r'& \multicolumn{7}{c||}{\bf \hspace{-8ex}FPA} & \multicolumn{7}{c|}{\bf \hspace{-8ex}Secant} \\ \hline'
+REGULABISSECTION = r'& \multicolumn{7}{c||}{\bf Regula Falsi} & \multicolumn{7}{c|}{\bf Bissection} \\ \hline'
 
 def print_latex_table(size, solvers, data):
     '''Print a latex representation of the test data as a table. 
     '''
-    print r'%7d \!\!\!' % size
+    print (r'%7d ' % size)
     size_data = data[data[:,0] == size,:]
     for solver in solvers:
         its_data = size_data[:,its[solver]]
         time_data = size_data[:,time[solver]]
-        print TABLELINE % (
+        negative = np.where(its_data == -1)
+        its_data = np.delete(its_data, negative)
+        time_data = np.delete(time_data, negative)
+        print (TABLELINE % (
             its_data.mean(), its_data.max(), its_data.min(), 
-            1000*time_data.mean(), 1000*time_data.max(), 1000*time_data.min()
-            )
-    print ENDLINE
+            1000*time_data.mean(), 1000*time_data.max(), 1000*time_data.min(),len(negative[0])
+            ))
+    print (ENDLINE)
     
 def latex_report(test, data):
     '''Print the full report of the test data in latex format.
     '''
     # Compute statistics.
-    print NEWTONSECANTHEAD
+    print FPASECANT
     for size in sizes:
         print_latex_table(size, ['FPA', 'Secant'], data)
 
-    print FIXSEARCHHEAD
+    print REGULABISSECTION
     for size in sizes:
         print_latex_table(size, ['Regula Falsi',
                                  'Bissection'], data)

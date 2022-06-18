@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
     printf("Projection type:%d\n", ptype);
 
     /* Total number of random tests to do. */
-    unsigned ntests = 2;
+    unsigned ntests = 50;
 
     /* Problem data */
     cqk_problem p;
