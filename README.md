@@ -1,4 +1,4 @@
-This directory contains all the code implementing the Fixed Point method to solve the Quadratic Convex Separable Knapsack (QSKP) problem, as described in the manuscript
+This repository contains all the code implementing the Fixed Point method to solve the Quadratic Convex Separable Knapsack (QSKP) problem, as described in the manuscript
 
  * A. Alves, J.O.L. Silva, L.C. Matioli, P.S.M. Santos, S.S. Souza. "A fixed-point algorithm for solving quadratic convex separable knapsack problems".
 
@@ -53,7 +53,9 @@ All original references and comments presented in the original code have been ke
 
 This will run the two set of tests. They can take many hours to complete.
 
-The first tests set, located at tests/ synthetic_benchmark directory, is the random test described in Section 4.1 of the manuscript. The second test is based on the Section 4.2.
+After run the command from the directory root_find_algorithms/tests/, a .tex file inside of test_results/ will be created contained the tables according to Section 4.1 of the manuscript. 
+
+After run the command from the directory state_of_the_art_algorithms/tests/, a .tex file inside of test_results/ will be created contained the tables according to Section 4.2 of the manuscript.
 
 ## Compilation 
 
