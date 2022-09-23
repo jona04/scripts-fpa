@@ -3,9 +3,6 @@
 
 #include "cont_quad_knapsack.h"
 
-/* Maximum number of iterations for each method. */
-#define MAXITERS 100000
-
 double initial_multiplier_fixed_point(cqk_problem *restrict p,
                                 double *restrict abp,
                                 double *restrict bbp,

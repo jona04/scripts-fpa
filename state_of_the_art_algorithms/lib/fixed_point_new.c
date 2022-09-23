@@ -48,30 +48,34 @@
  * Obs: The multiplier is computed as suggested by the variable fixing
  * methods.
  */
-double initial_multiplier_fixed_point(cqk_problem *restrict p,
+double initial_multiplier_fixed_point_new(cqk_problem *restrict p, 
+                                double *r,
                                 double *restrict abp,
                                 double *restrict bbp,
-                                double *restrict lr,
                                 double *restrict ur,
-                                double *restrict bl,
+                                double *restrict lr,
                                 double *restrict bu) {
 
     double d2 = 0.0;
     double d1 = 0.0;
     double lambda = 0.0;
     double pre = 0.0;
+    double aa, uu;
     for (unsigned i = 0; i < p->n; ++i) {
-        lr[i] = (p->a[i] - p->d[i]*p->low[i])/p->b[i];
-        ur[i] = (p->a[i] - p->d[i]*p->up[i])/p->b[i];
-        pre = p->b[i]/p->d[i];
-        abp[i] = p->a[i]*pre;
-        bbp[i] = p->b[i]*pre;
-        bl[i] = p->b[i]*p->low[i];
-        bu[i] = p->b[i]*p->up[i];
+
+        aa = p->a[i] - (p->d[i] * p->low[i]);
+        uu = p->up[i] - p->low[i];
+        ur[i] = (aa - p->d[i] * uu)/p->b[i];
+        lr[i] = aa/p->b[i];
+        pre = p->b[i] / p->d[i];
+        abp[i] = aa * pre;
+        bbp[i] = p->b[i] * pre;
+        bu[i] = p->b[i] * uu;
         d1 += abp[i];
         d2 += bbp[i];
+        *r = *r - (p->b[i] * p->low[i]);
     }
-    lambda = (d1 - p->r)/d2;
+    lambda = (d1 - *r)/d2;
     return lambda;
 }
 
@@ -93,27 +97,30 @@ double initial_multiplier_fixed_point(cqk_problem *restrict p,
  *      double *Sbap: sum of terms abp presented in set I_eq.
  *      double *Sbbp: sum of terms bbp presented in set I_eq.
  */
-void xis_quad(unsigned n,
+void xis_quad_new(unsigned n,
                 double *restrict lambda,
-                double *restrict lr,double *restrict ur,
-                double *restrict bl,double *restrict bu,
+                double *restrict ur,  double *restrict lr,
+                double *restrict bu,
                 double *restrict abp,double *restrict bbp,
-                 double *Sbl, double *Sbu, double *Sbap, double *Sbbp){
+                double *Sbu, double *Sbap, double *Sbbp){
 
-    *Sbl = 0.0;
     *Sbu = 0.0;
     *Sbap = 0.0; 
     *Sbbp = 0.0;
 
     for (unsigned i = 0; i < n; i++){
-        if (*lambda < ur[i])
+        
+        if (*lambda < ur[i]){
             *Sbu += bu[i];
-        else if (*lambda > lr[i])
-                *Sbl += bl[i];
-            else{
-                *Sbap += abp[i];
-                *Sbbp += bbp[i];
-            }
+            continue;
+        }
+        
+        if (*lambda < lr[i]){
+            *Sbap += abp[i];
+            *Sbbp += bbp[i];
+            continue;
+        }
+
     }
 }
 
@@ -132,16 +139,17 @@ void xis_quad(unsigned n,
  * Output:
  *     double *x: solution obtained.
  */
-void mount_x(cqk_problem *restrict p, double *restrict x, double lambda,
-            double *restrict lr,double *restrict ur){
-
+void mount_x_new(cqk_problem *restrict p, double *restrict x, double lambda,
+            double *restrict ur, double *restrict lr){
+    
     for (unsigned i = 0; i < p->n; i++){
+
         if (lambda > lr[i])
             x[i] = p->low[i];
         else if (lambda < ur[i])
-                x[i] = p->up[i];
-            else
-                x[i] = ( p->a[i] - lambda * p->b[i] ) / p->d[i];
+            x[i] = p->up[i];
+            else 
+                x[i] = (( p->a[i] - lambda * p->b[i] ) / p->d[i]);
     }
 }
 
@@ -160,30 +168,30 @@ void mount_x(cqk_problem *restrict p, double *restrict x, double lambda,
  *     solution, -1 in case of failure, -2 in case of infeasible
  *     problem.
  */
-int fixed_point(cqk_problem *restrict p, double *x) {
+int fixed_point_new(cqk_problem *restrict p, double *x) {
 
     unsigned n_iters = 1;
     double lambda, antLambda;
-    double Sbl, Sbu, Sbap, Sbbp;
+    double Sbu, Sbap, Sbbp;
 
     unsigned n = p->n;
+    double r = p->r;
 
     double *restrict abp = (double *) malloc(n*sizeof(double));
     double *restrict bbp = (double *) malloc(n*sizeof(double));
-    double *restrict lr = (double *) malloc(n*sizeof(double));
     double *restrict ur = (double *) malloc(n*sizeof(double));
-    double *restrict bl = (double *) malloc(n*sizeof(double));
+    double *restrict lr = (double *) malloc(n*sizeof(double));
     double *restrict bu = (double *) malloc(n*sizeof(double));
 
-    lambda = initial_multiplier_fixed_point(p,abp,bbp,lr,ur,bl,bu);
+    lambda = initial_multiplier_fixed_point_new(p,&r,abp,bbp,ur,lr,bu);
     while (n_iters <= MAXITERS) {
-        xis_quad(n, &lambda, lr,ur,bl,bu,abp,bbp, &Sbl, &Sbu, &Sbap, &Sbbp);
+        xis_quad_new(n, &lambda,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
         
         antLambda = lambda;
-        lambda = (Sbl + Sbu + Sbap - p->r)/(Sbbp);
+        lambda = (Sbu + Sbap - r)/(Sbbp);
 
         if(fabs(lambda - antLambda) <= PREC){
-            mount_x(p,x, lambda, lr,ur);
+            mount_x_new(p,x, lambda,ur,lr);
             break;
         }
 
@@ -192,9 +200,8 @@ int fixed_point(cqk_problem *restrict p, double *x) {
 
     free(abp);
     free(bbp);
-    free(lr);
     free(ur);
-    free(bl);
+    free(lr);
     free(bu);
 
     return n_iters;

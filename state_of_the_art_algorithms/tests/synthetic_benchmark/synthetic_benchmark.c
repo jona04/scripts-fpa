@@ -29,6 +29,7 @@
 #include <time.h>
 
 #include "../../lib/fixed_point.h"
+#include "../../lib/fixed_point_new.h"
 #include "../../lib/cont_quad_knapsack.h"
 #include "../../lib/third_party_methods.h"
 #include "../../../third_party/dSFMT-src-2.2.2/dSFMT.h"
@@ -219,10 +220,23 @@ void run_a_test(cqk_problem *restrict p, char *restrict method, unsigned nreps,
     int status = -1;
     double start, duration;
     printf("Start %s...\n", method);
-    if (!strcmp(method, "Newton")) {
+    if (!strcmp(method, "fixed_point")) {
         start = clock();
-        for (unsigned i = 0; i < nreps; ++i)
+        for (unsigned i = 0; i < nreps; ++i){
+            status = fixed_point(p, x);
+        }
+        duration = (double) clock() - start;
+    }else if (!strcmp(method, "fixed_point_new")) {
+        start = clock();
+        for (unsigned i = 0; i < nreps; ++i){
+            status = fixed_point_new(p, x);
+        }
+        duration = (double) clock() - start;
+    }else if (!strcmp(method, "Newton")) {
+        start = clock();
+        for (unsigned i = 0; i < nreps; ++i){
             status = newton(p, NULL, x);
+        }
         duration = (double) clock() - start;
     } else if (!strcmp(method, "secant")) {
         start = clock();
@@ -236,12 +250,7 @@ void run_a_test(cqk_problem *restrict p, char *restrict method, unsigned nreps,
         for (unsigned i = 0; i < nreps; ++i)
             status = kiwiel_var_fix(p, x);
         duration = (double) clock() - start;
-    } else if (!strcmp(method, "fixed_point")) {
-        start = clock();
-        for (unsigned i = 0; i < nreps; ++i)
-            status = fixed_point(p, x);
-        duration = (double) clock() - start;
-    }else {
+    } else {
         start = clock();
         for (unsigned i = 0; i < nreps; ++i)
             status = kiwiel_search(p, x);
@@ -278,8 +287,8 @@ void run_a_test(cqk_problem *restrict p, char *restrict method, unsigned nreps,
  */
 int main(int argc, char *argv[]) {
     /* List of possible methods */
-    char *methods[4] = {"fixed_point","Newton","fix","secant"};
-    const unsigned n_methods = 4;
+    char *methods[6] = {"fixed_point_new","fixed_point","Newton","secant","fix","search"};
+    const unsigned n_methods = 6;
 
     problem_type ptype; /* Code for the problem type */
     unsigned n;         /* Problem dimension */
@@ -294,9 +303,9 @@ int main(int argc, char *argv[]) {
     printf("Projection type:%d\n", ptype);
 
     /* Total number of random tests to do. */
-    unsigned ntests = 50;
+    unsigned ntests = 2;
     /* Number of repetions for each test */
-    unsigned nreps = 50;
+    unsigned nreps = 2;
     nreps = nreps > 0 ? nreps : 1;
 
     /* Problem data */
@@ -312,12 +321,15 @@ int main(int argc, char *argv[]) {
 
     /* File to hold the statistics */
     FILE *out = fopen("times.dat", "w");
+
     for (unsigned repetitions = 0; repetitions < ntests; ++repetitions) {
 
-        if (ptype != flow)
+        if (ptype != flow){
             generate_cqk_problem(ptype, &p);
-        else
+        }
+        else{
             generate_flow_problem(&p);
+        }
         for (unsigned met = 0; met < n_methods; ++met)
             run_a_test(&p, methods[met], nreps, out, x);
         fprintf(out, "\n");
@@ -325,5 +337,3 @@ int main(int argc, char *argv[]) {
     free_cqk_problem(&p);
     return 0;
 }
-
-

@@ -1,7 +1,7 @@
 # Simple makefile to compile the synthetic (random) tests
 
 # Compilation flags
-CC=gcc
+CC=gcc-12
 FC=gfortran
 OPTFLAGS=-march=native -O3 -ffast-math
 CFLAGS=-ansi -std=c99 -Wall -pedantic $(OPTFLAGS)
@@ -23,11 +23,11 @@ LIBS += -lblas
 
 # Targets
 BINARY=synthetic
-OBJS=fixed_point.o synthetic_benchmark.o cont_quad_knapsack.o third_party_methods.o dsel05.o dSFMT.o
+OBJS=fixed_point.o fixed_point_new.o synthetic_benchmark.o cont_quad_knapsack.o third_party_methods.o dsel05.o dSFMT.o
 all: $(BINARY)
 
 # Dependencies and build rules
-synthetic_benchmark.o: synthetic_benchmark.c ../../lib/cont_quad_knapsack.h ../../lib/third_party_methods.h ../../lib/fixed_point.h 
+synthetic_benchmark.o: synthetic_benchmark.c ../../lib/cont_quad_knapsack.h ../../lib/third_party_methods.h ../../lib/fixed_point.h ../../lib/fixed_point_new.h 
 	$(CC) $(CFLAGS) -DDSFMT_MEXP=19937 -c synthetic_benchmark.c
 
 cont_quad_knapsack.o: ../../lib/cont_quad_knapsack.h ../../lib/cont_quad_knapsack.c
@@ -38,6 +38,9 @@ third_party_methods.o: ../../lib/third_party_methods.h ../../lib/third_party_met
 
 fixed_point.o: ../../lib/fixed_point.h ../../lib/fixed_point.c ../../lib/cont_quad_knapsack.h
 	$(CC) $(CFLAGS) -c ../../lib/fixed_point.c
+
+fixed_point_new.o: ../../lib/fixed_point_new.h ../../lib/fixed_point_new.c ../../lib/cont_quad_knapsack.h
+	$(CC) $(CFLAGS) -c ../../lib/fixed_point_new.c
 
 dsel05.o: ../../../third_party/dsel05.f
 	$(FC) $(FFLAGS) -c ../../../third_party/dsel05.f

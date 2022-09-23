@@ -7,9 +7,8 @@ import scipy as sp
 
 # Set of tests types and sizes
 results_dir = 'test_results/'
-tests = ['uncorrelated', "weakly_correlated", "correlated","flow"]
+tests = ['uncorrelated', "weakly_correlated", "correlated", "flow"]
 sizes = [50000, 100000, 500000, 1000000, 1500000, 2000000]
-# sizes = [50000, 100000, 500000, 1000000]
 
 if __name__ == '__main__':
     # Rebuild the benchmark.
@@ -39,8 +38,8 @@ if __name__ == '__main__':
 
     # Generate report in LaTeX format.
     os.chdir(results_dir)
-    latex = check_output(['python2', '../summarize.py', 'latex'])
-    out = file('synthetic_results.tex', 'w')
-    out.write(latex)
+    latex = check_output(['python', '../summarize.py', 'latex'])
+    out = open('synthetic_results.tex', 'w', encoding='utf-8')
+    out.write(latex.decode('utf-8'))
     out.close()
     os.chdir('..')
