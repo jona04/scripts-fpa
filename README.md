@@ -1,6 +1,6 @@
 This repository contains all the code implementing the Fixed Point method to solve the Quadratic Convex Separable Knapsack (QSKP) problem, as described in the manuscript
 
- * A. Alves, J.O.L. Silva, L.C. Matioli, P.S.M. Santos, S.S. Souza. "A fixed-point algorithm for solving quadratic convex separable knapsack problems".
+ * A. Alves, J.O.L. Silva, L.C. Matioli, P.S.M. Santos, S.S. Souza. "An accelerated fixed-point algorithm  applied to quadratic convex separable knapsack problems".
 
 ## Important Note
 
@@ -25,16 +25,20 @@ All original references and comments presented in the original code have been ke
 
 * third_party/ : Directory containing the code necessary to implement some third party methods
 
-* root_finding_algorithms/lib/ : Directory containing the implementation of the root finding solvers applied to QSKP problem. It has four files:
+* state_of_the_art_algorithms/lib/ : Directory containing the implementation of the state of the art solvers applied to QSKP problem. It has six files:
+    * third_party_methods.c (and .h)
+    * cont_quad_knapsack.c (and .h)
+    * fixed_point.c (and .h)
+
+* accelerated_algorithms/lib/ : Directory containing the implementation of the accelerated fixed-point methods. It has four files:
+    * fixed_point_a.c (and .h)
+    * fixed_point_ai.c (and .h)
+
+* root_finding_algorithms/lib/ : Directory containing the implementation of the root finding solvers applied to QSKP problem. It has eigth files:
     * bissection_method.c (and .h)
     * fixed_point.c (and .h)
     * regula_falsi.c (and .h)
     * secant_method.c (and .h)
-
-* state_of_the_art_algorithms/lib/ : Directory containing the implementation of the state of the art solvers applied to QSKP problem. It has three files:
-    * third_party_methods.c (and .h)
-    * cont_quad_knapsack.c (and .h)
-    * fixed_point.c (and .h)
 
 *  state_of_the_art_algorithms/lib/optmize.py : Run this to generate an optimized version of the methods above
     when the Hessian diagonal is a fixed value (that is, the d vector is a
@@ -66,7 +70,7 @@ The file Makefile will then generate all necessary compilation files.
 This code was implemented in standard C (version C99) and it can be compiled and used by any standard compliant compiler.
 
 To compile and run the tests you need a unix like shell, make, gcc, gfortran
-version 4.4 or later, python (2.6 <= version < 3.9) with scipy and numpy
+version 4.4 or later, python (3.6 <= version < 3.9) with scipy and numpy
 packages. The code assumes that you also have a BLAS library installed and that
 it can be linked with a simple flag like -lblas. IF you do not have BLAS you
 will need to edit the files tests/synthetic/Makefile and tests/svm/Makefile and
