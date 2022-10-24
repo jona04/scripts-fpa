@@ -28,11 +28,12 @@
 #include <math.h>
 #include <time.h>
 
+#include "../../../state_of_the_art_algorithms/lib/fixed_point.h"
 #include "../../../state_of_the_art_algorithms/lib/fixed_point_new.h"
 #include "../../../state_of_the_art_algorithms/lib/cont_quad_knapsack.h"
-#include "../../lib/bissection_method.h"
-#include "../../lib/secant_method.h"
-#include "../../lib/regula_falsi.h"
+#include "../../../state_of_the_art_algorithms/lib/third_party_methods.h"
+#include "../../lib/fixed_point_a.h"
+#include "../../lib/fixed_point_ai.h"
 #include "../../../third_party/dSFMT-src-2.2.2/dSFMT.h"
 
 /* Possible benchmark types */
@@ -43,7 +44,6 @@ typedef enum {
     flow,
     invalid
 } problem_type;
-
 
 /* Global random number generator instance */
 static dsfmt_t dsfmt;
@@ -222,31 +222,35 @@ void run_a_test(cqk_problem *restrict p, char *restrict method, unsigned nreps,
     int status = -1;
     double start, duration;
     printf("Start %s...\n", method);
-    if (!strcmp(method, "bissection")) {
+    if (!strcmp(method, "fixed_point")) {
         start = clock();
-        for (unsigned i = 0; i < nreps; ++i)
-            status = bissection_method(p, x, PREC);
+        for (unsigned i = 0; i < nreps; ++i){
+            status = fixed_point(p, x);
+        }
         duration = (double) clock() - start;
-    } else if (!strcmp(method, "secant")) {
+    }else if (!strcmp(method, "fixed_point_new")) {
         start = clock();
-        for (unsigned i = 0; i < nreps; ++i)
-            status = secant_method(p, x, PREC);
-        duration = (double) clock() - start;
-    } else if (!strcmp(method, "regula_falsi")) {
-        start = clock();
-        for (unsigned i = 0; i < nreps; ++i)
-            status = regula_falsi(p, x, PREC);
-        duration = (double) clock() - start;
-    }else {
-        start = clock();
-        for (unsigned i = 0; i < nreps; ++i)
+        for (unsigned i = 0; i < nreps; ++i){
             status = fixed_point_new(p, x);
+        }
+        duration = (double) clock() - start;
+    }else if (!strcmp(method, "aitken")) {
+        start = clock();
+        for (unsigned i = 0; i < nreps; ++i){
+            status = fixed_point_ai(p, x);
+        }
+        duration = (double) clock() - start;
+    }else if (!strcmp(method, "anderson")) {
+        start = clock();
+        for (unsigned i = 0; i < nreps; ++i){
+            status = fixed_point_a(p, x);
+        }
         duration = (double) clock() - start;
     }
     duration /= CLOCKS_PER_SEC;
 
     /* Print and save statistics */
-    printf("Projection time=%.4e %d\n\n", duration, status);
+    printf("Projection time=%.4e %d\n\n", duration/nreps, status);
     double residual, dist;
     if (status >= 0) {
         residual_dist(p, x, &residual, &dist);
@@ -255,34 +259,6 @@ void run_a_test(cqk_problem *restrict p, char *restrict method, unsigned nreps,
         duration = -duration;
     }
     fprintf(out, "%d\t%e\t%e\t%e\t", status, duration/nreps, dist, residual);
-}
-
-void allocate_cqk_problem(unsigned n, cqk_problem *restrict p) {
-    p->n = n;
-    p->d = (double *) malloc(p->n*sizeof(double));
-    p->a = (double *) malloc(p->n*sizeof(double));
-    p->b = (double *) malloc(p->n*sizeof(double));
-    p->low = (double *) malloc(p->n*sizeof(double));
-    p->up = (double *) malloc(p->n*sizeof(double));
-    if (!p->d || !p->a || !p->b || !p->low || !p->up) {
-        fprintf(stderr, "Memory allocation error, line %d, file %s\n",
-                __LINE__, __FILE__);
-        exit(1);
-    }
-}
-
-void free_cqk_problem(cqk_problem *restrict p) {
-    p->n = 0;
-    free(p->d);
-    p->d = NULL;
-    free(p->a);
-    p->a = NULL;
-    free(p->b);
-    p->b = NULL;
-    free(p->low);
-    p->low = NULL;
-    free(p->up);
-    p->up = NULL;
 }
 
 /*
@@ -302,7 +278,7 @@ void free_cqk_problem(cqk_problem *restrict p) {
  */
 int main(int argc, char *argv[]) {
     /* List of possible methods */
-    char *methods[4] = {"fixed_point_new", "secant", "regula_falsi", "bissection"};
+    char *methods[4] = {"aitken","anderson","fixed_point_new","fixed_point"};
     const unsigned n_methods = 4;
 
     problem_type ptype; /* Code for the problem type */
@@ -318,9 +294,9 @@ int main(int argc, char *argv[]) {
     printf("Projection type:%d\n", ptype);
 
     /* Total number of random tests to do. */
-    unsigned ntests = 50;
+    unsigned ntests = 5;
     /* Number of repetions for each test */
-    unsigned nreps = 50;
+    unsigned nreps = 3;
     nreps = nreps > 0 ? nreps : 1;
 
     /* Problem data */
@@ -336,12 +312,15 @@ int main(int argc, char *argv[]) {
 
     /* File to hold the statistics */
     FILE *out = fopen("times.dat", "w");
+
     for (unsigned repetitions = 0; repetitions < ntests; ++repetitions) {
 
-        if (ptype != flow)
+        if (ptype != flow){
             generate_cqk_problem(ptype, &p);
-        else
+        }
+        else{
             generate_flow_problem(&p);
+        }
         for (unsigned met = 0; met < n_methods; ++met)
             run_a_test(&p, methods[met], nreps, out, x);
         fprintf(out, "\n");
@@ -349,5 +328,3 @@ int main(int argc, char *argv[]) {
     free_cqk_problem(&p);
     return 0;
 }
-
-

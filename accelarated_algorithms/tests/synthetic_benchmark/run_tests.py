@@ -7,9 +7,9 @@ import scipy as sp
 
 # Set of tests types and sizes
 results_dir = 'test_results/'
-tests = ['uncorrelated', "weakly_correlated", "correlated"]
+tests = ['uncorrelated', "weakly_correlated", "correlated", "flow"]
 sizes = [50000, 100000, 500000, 1000000, 1500000, 2000000]
-# sizes = [2000000]
+# sizes = [50000, 100000]
 
 if __name__ == '__main__':
     # Rebuild the benchmark.

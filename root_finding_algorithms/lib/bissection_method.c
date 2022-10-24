@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "bissection_method.h"
+#include "../../state_of_the_art_algorithms/lib/cont_quad_knapsack.h"
 
-void findInterval(cqk_problem *restrict p, double *intervalA, double *intervalB,
+void findIntervalB(cqk_problem *restrict p, double *intervalA, double *intervalB,
                     double *ga, double *gb){
 
     for (double k = 0; k < 100; k++){
@@ -56,7 +56,7 @@ int bissection_method(cqk_problem *restrict p, double *x, double eps){
     double gb;
     double lambda;
 
-    findInterval(p, &intervalA, &intervalB, &ga, &gb);
+    findIntervalB(p, &intervalA, &intervalB, &ga, &gb);
     
     unsigned k;
     for (k = 0; k < 100; k++){

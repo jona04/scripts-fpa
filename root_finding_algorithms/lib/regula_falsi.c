@@ -2,8 +2,51 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "regula_falsi.h"
+#include "../../state_of_the_art_algorithms/lib/cont_quad_knapsack.h"
 
+void findIntervalR(cqk_problem *restrict p, double *intervalA, double *intervalB,
+                    double *ga, double *gb){
+
+    for (double k = 0; k < 100; k++){
+
+        double xb = 0;
+        double xa = 0;
+        *ga = 0;
+        *gb = 0;
+
+        for (int i = 0; i < p->n; i++){
+            
+            xa = (p->a[i] - (-k)*p->b[i] ) / p->d[i] ;
+            if(xa < p->low[i]){
+                xa = p->low[i];
+            }else{
+                if(xa > p->up[i]){
+                    xa = p->up[i];
+                }
+            }
+            *ga += p->b[i]*xa;
+
+            xb = (p->a[i] - (k)*p->b[i] ) / p->d[i] ;
+            if(xb <= p->low[i]){
+                xb = p->low[i];
+            }else{
+                if(xb > p->up[i]){
+                    xb = p->up[i];
+                }
+            }
+            *gb += p->b[i]*xb;
+
+        }
+        *ga = *ga - p->r;
+        *gb = *gb - p->r;
+        if ((*ga)*(*gb) < 0.00000){
+            *intervalA = -k;
+            *intervalB = k;
+            return;
+        }
+    }
+
+}
 
 int regula_falsi(cqk_problem *restrict p, double *x, double eps){
 
@@ -12,7 +55,7 @@ int regula_falsi(cqk_problem *restrict p, double *x, double eps){
     double gaa;
     double gbb;
 
-    findInterval(p, &intervalA, &intervalB, &gaa, &gbb);
+    findIntervalR(p, &intervalA, &intervalB, &gaa, &gbb);
     for (int k = 0; k < 100; k++){
 
         double ga = 0;

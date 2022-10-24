@@ -6,8 +6,7 @@ import numpy as np
 from run_tests import tests, sizes
 
 # Name of the solvers in the order they were run by synthetic_benchmark.
-solvers = ['FPA2','FPA','Newton','Secant','Variable fixing', 'Median search']
-# solvers = ['FPA2','FPA','Newton','Secant']
+solvers = ['FPA2-Aitken','FPA2-Anderson','FPA2','FPA']
 
 # Maps the columns to different statistics for each solver.
 its, time, dist, res = {}, {}, {}, {}
@@ -22,7 +21,7 @@ def verify(test):
 
     It verifies if the relative residual is small enough (1.0e-8) and
     optimal value when the problem is viewed as a D-projection is
-    approximately equal for all solvers.
+    approximatelyh equal for all solvers.
     '''
     EPS = 1.0e-8
     test = np.array(test, dtype=int)
@@ -100,9 +99,8 @@ TABLEEND=r'''
 '''
 TABLELINE = r'&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f & %d'
 ENDLINE = r'\\ \hline'
-FPAAFPA = r'& \multicolumn{7}{c||}{\bf \hspace{-8ex}FPA2} & \multicolumn{7}{c|}{\bf \hspace{-8ex}FPA} \\ \hline'
-NEWTONSECANT = r'& \multicolumn{7}{c||}{\bf Newton} & \multicolumn{7}{c|}{\bf Secant} \\ \hline'
-FIXSEARCH = r'& \multicolumn{7}{c||}{\bf Variable fixing} & \multicolumn{7}{c|}{\bf Median search} \\ \hline'
+AITKENANDERSON = r'& \multicolumn{7}{c||}{\bf \hspace{-8ex}FPA2-Aitken} & \multicolumn{7}{c|}{\bf \hspace{-8ex}FPA2-Anderson} \\ \hline'
+FPAAFPA = r'& \multicolumn{7}{c||}{\bf FPA2} & \multicolumn{7}{c|}{\bf FPA} \\ \hline'
 
 def print_latex_table(size, solvers, data):
     '''Print a latex representation of the test data as a table. 
@@ -126,17 +124,13 @@ def latex_report(test, data):
     '''
     # Compute statistics.
 
+    print (AITKENANDERSON)
+    for size in sizes:
+        print_latex_table(size, ['FPA2-Aitken', 'FPA2-Anderson'], data)
+
     print (FPAAFPA)
     for size in sizes:
         print_latex_table(size, ['FPA2', 'FPA'], data)
-
-    print (NEWTONSECANT)
-    for size in sizes:
-        print_latex_table(size, ['Newton', 'Secant'], data)
-
-    print (FIXSEARCH)
-    for size in sizes:
-        print_latex_table(size, ['Variable fixing', 'Median search'], data)
 
 # Main program
 if __name__ == '__main__':

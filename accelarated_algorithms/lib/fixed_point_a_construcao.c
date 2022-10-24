@@ -15,7 +15,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cont_quad_knapsack.h"
+#include "../../state_of_the_art_algorithms/lib/cont_quad_knapsack.h"
 
 /********** Fixed point method Separable Quadratic Knapsack problem
             described in the manuscript
@@ -48,7 +48,7 @@
  * Obs: The multiplier is computed as suggested by the variable fixing
  * methods.
  */
-double initial_multiplier_fixed_point_new(cqk_problem *restrict p, 
+double initial_multiplier_fixed_point_a(cqk_problem *restrict p, 
                                 double *r,
                                 double *restrict abp,
                                 double *restrict bbp,
@@ -97,8 +97,8 @@ double initial_multiplier_fixed_point_new(cqk_problem *restrict p,
  *      double *Sbap: sum of terms abp presented in set I_eq.
  *      double *Sbbp: sum of terms bbp presented in set I_eq.
  */
-void xis_quad_new(unsigned n,
-                double *restrict lambda,
+void xis_quad_a(unsigned n,
+                double lambda,
                 double *restrict ur,  double *restrict lr,
                 double *restrict bu,
                 double *restrict abp,double *restrict bbp,
@@ -110,12 +110,12 @@ void xis_quad_new(unsigned n,
 
     for (unsigned i = 0; i < n; i++){
         
-        if (*lambda <= ur[i]){
+        if (lambda < ur[i]){
             *Sbu += bu[i];
             continue;
         }
         
-        if (*lambda <= lr[i]){
+        if (lambda < lr[i]){
             *Sbap += abp[i];
             *Sbbp += bbp[i];
             continue;
@@ -139,14 +139,14 @@ void xis_quad_new(unsigned n,
  * Output:
  *     double *x: solution obtained.
  */
-void mount_x_new(cqk_problem *restrict p, double *restrict x, double lambda,
+void mount_x_a(cqk_problem *restrict p, double *restrict x, double lambda,
             double *restrict ur, double *restrict lr){
     
     for (unsigned i = 0; i < p->n; i++){
 
-        if (lambda >= lr[i])
+        if (lambda > lr[i])
             x[i] = p->low[i];
-        else if (lambda <= ur[i])
+        else if (lambda < ur[i])
             x[i] = p->up[i];
             else 
                 x[i] = (( p->a[i] - lambda * p->b[i] ) / p->d[i]);
@@ -168,14 +168,24 @@ void mount_x_new(cqk_problem *restrict p, double *restrict x, double lambda,
  *     solution, -1 in case of failure, -2 in case of infeasible
  *     problem.
  */
-int fixed_point_new(cqk_problem *restrict p, double *x) {
+int fixed_point_a(cqk_problem *restrict p, double *x) {
 
-    unsigned n_iters = 1;
-    double lambda, antLambda;
-    double Sbu, Sbap, Sbbp;
+    unsigned k = 0;
+    double gammaK, x0, xk, gxk, tempvec, A;
+    double residual = 1e9;
+    double Sbu;
+    double Sbap;
+    double Sbbp;
+    
+    unsigned mk;
+    int m = 1;
 
     unsigned n = p->n;
     double r = p->r;
+
+    double *restrict Fk = (double *) malloc(100*sizeof(double));
+    double *restrict alpha = (double *) malloc(100*sizeof(double));
+    double *restrict g_mk_bulk = (double *) malloc(100*sizeof(double));
 
     double *restrict abp = (double *) malloc(n*sizeof(double));
     double *restrict bbp = (double *) malloc(n*sizeof(double));
@@ -183,26 +193,79 @@ int fixed_point_new(cqk_problem *restrict p, double *x) {
     double *restrict lr = (double *) malloc(n*sizeof(double));
     double *restrict bu = (double *) malloc(n*sizeof(double));
 
-    lambda = initial_multiplier_fixed_point_new(p,&r,abp,bbp,ur,lr,bu);
-    while (n_iters <= MAXITERS) {
-        xis_quad_new(n, &lambda,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
-        
-        antLambda = lambda;
-        lambda = (Sbu + Sbap - r)/(Sbbp);
+    x0 = initial_multiplier_fixed_point_a(p,&r,abp,bbp,ur,lr,bu);
+    
+    xis_quad_a(n, x0,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+    xk = (Sbu + Sbap - r)/(Sbbp);
 
-        if(fabs(lambda - antLambda) <= PREC){
-            mount_x_new(p,x, lambda,ur,lr);
+    while (k <= MAXITERS) {
+        mk = MIN(k, m);
+
+        xis_quad_a(n, xk,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+        gxk = (Sbu + Sbap - r)/(Sbbp);
+
+        residual = xk - gxk;
+
+        if (fabs(residual) <= PREC){
+            mount_x_a(p,x, gxk,ur,lr);
             break;
         }
 
-        n_iters++;
+        if (k > m){
+            g_mk_bulk[k] = gxk;
+            Fk[k] = residual;
+            for (unsigned i =0; i < m; i++){
+                Fk[i] = Fk[i+1];
+                g_mk_bulk[i] = g_mk_bulk[i+1];
+            }
+        }else {
+            Fk[k] = residual;
+            g_mk_bulk[k] = gxk;
+        }
+
+        tempvec = Fk[mk] * -1.0;
+        if (mk == 0){
+            A = Fk[0];
+            alpha[0] = 1;
+        }else{
+            
+        }
+        gammaK = gg[k] / Gk[0];
+        result2 = (Xk[0] + Gk[0]) * gammaK;
+        xx[k + 1] = xx[k] + gg[k] - result2;
+        
+        
+        
+        // printf("teste = %f - %f - %f - %f - %f -%f - %f - %f - %f \n", lambda0, xx[k + 1], xx[k], gg[k], result2, Xk[0], Gk[0], gammaK, Sbbp);
+        if (fabs(lambda - lambdaAnt) <= PREC){
+            mount_x_a(p,x, lambda,ur,lr);
+            break;
+        }
+        
+        gg[k + 1] = lambda - xx[k + 1];
+        
+        Xk[k] = xx[k + 1] - xx[k];
+        Gk[k] = gg[k + 1] - gg[k];
+
+        if (k >= m){
+            for (unsigned i =0; i <= m; i++){
+                Xk[i] = Xk[i+1];
+                Gk[i] = Gk[i+1];
+            }
+        }
+
+        // Xk = xx[k + 1] - xx[k];
+        // Gk = gg[k + 1] - gg[k];
+
+        lambdaAnt = lambda;
+        k++;
     }
 
     free(abp);
     free(bbp);
-    free(ur);
     free(lr);
+    free(ur);
     free(bu);
 
-    return n_iters;
+    return k+1;
 }

@@ -15,7 +15,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "cont_quad_knapsack.h"
+#include "../../state_of_the_art_algorithms/lib/cont_quad_knapsack.h"
 
 /********** Fixed point method Separable Quadratic Knapsack problem
             described in the manuscript
@@ -48,7 +48,7 @@
  * Obs: The multiplier is computed as suggested by the variable fixing
  * methods.
  */
-double initial_multiplier_fixed_point_new(cqk_problem *restrict p, 
+double initial_multiplier_fixed_point_a(cqk_problem *restrict p, 
                                 double *r,
                                 double *restrict abp,
                                 double *restrict bbp,
@@ -97,8 +97,8 @@ double initial_multiplier_fixed_point_new(cqk_problem *restrict p,
  *      double *Sbap: sum of terms abp presented in set I_eq.
  *      double *Sbbp: sum of terms bbp presented in set I_eq.
  */
-void xis_quad_new(unsigned n,
-                double *restrict lambda,
+void xis_quad_a(unsigned n,
+                double lambda,
                 double *restrict ur,  double *restrict lr,
                 double *restrict bu,
                 double *restrict abp,double *restrict bbp,
@@ -110,12 +110,12 @@ void xis_quad_new(unsigned n,
 
     for (unsigned i = 0; i < n; i++){
         
-        if (*lambda <= ur[i]){
+        if (lambda < ur[i]){
             *Sbu += bu[i];
             continue;
         }
         
-        if (*lambda <= lr[i]){
+        if (lambda < lr[i]){
             *Sbap += abp[i];
             *Sbbp += bbp[i];
             continue;
@@ -139,14 +139,14 @@ void xis_quad_new(unsigned n,
  * Output:
  *     double *x: solution obtained.
  */
-void mount_x_new(cqk_problem *restrict p, double *restrict x, double lambda,
+void mount_x_a(cqk_problem *restrict p, double *restrict x, double lambda,
             double *restrict ur, double *restrict lr){
     
     for (unsigned i = 0; i < p->n; i++){
 
-        if (lambda >= lr[i])
+        if (lambda > lr[i])
             x[i] = p->low[i];
-        else if (lambda <= ur[i])
+        else if (lambda < ur[i])
             x[i] = p->up[i];
             else 
                 x[i] = (( p->a[i] - lambda * p->b[i] ) / p->d[i]);
@@ -168,14 +168,24 @@ void mount_x_new(cqk_problem *restrict p, double *restrict x, double lambda,
  *     solution, -1 in case of failure, -2 in case of infeasible
  *     problem.
  */
-int fixed_point_new(cqk_problem *restrict p, double *x) {
+int fixed_point_a(cqk_problem *restrict p, double *x) {
 
-    unsigned n_iters = 1;
-    double lambda, antLambda;
-    double Sbu, Sbap, Sbbp;
+    unsigned k = 1;
+    double gammaK, x0, fx0, ffx0, lambdaAnt, lambda;
+    double Sbu;
+    double Sbap;
+    double Sbbp;
+    
+    unsigned mk;
+    int m = 3;
 
     unsigned n = p->n;
     double r = p->r;
+
+    double *restrict xx = (double *) malloc(100*sizeof(double));
+    double *restrict gg = (double *) malloc(100*sizeof(double));
+    double *restrict Gk = (double *) malloc(100*sizeof(double));
+    double *restrict Xk = (double *) malloc(100*sizeof(double));
 
     double *restrict abp = (double *) malloc(n*sizeof(double));
     double *restrict bbp = (double *) malloc(n*sizeof(double));
@@ -183,26 +193,92 @@ int fixed_point_new(cqk_problem *restrict p, double *x) {
     double *restrict lr = (double *) malloc(n*sizeof(double));
     double *restrict bu = (double *) malloc(n*sizeof(double));
 
-    lambda = initial_multiplier_fixed_point_new(p,&r,abp,bbp,ur,lr,bu);
-    while (n_iters <= MAXITERS) {
-        xis_quad_new(n, &lambda,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
-        
-        antLambda = lambda;
-        lambda = (Sbu + Sbap - r)/(Sbbp);
+    x0 = initial_multiplier_fixed_point_a(p,&r,abp,bbp,ur,lr,bu);
+    
+    xis_quad_a(n, x0,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+    x0 = (Sbu + Sbap - r)/(Sbbp);
+    
+    xis_quad_a(n, x0,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+    fx0 = (Sbu + Sbap - r)/(Sbbp);
+    
+    xis_quad_a(n, fx0,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+    ffx0 = (Sbu + Sbap - r)/(Sbbp);
+    
+    if (fabs(ffx0 - fx0) <= PREC){
+        mount_x_a(p,x, lambda,ur,lr);
+        return k;
+    }
 
-        if(fabs(lambda - antLambda) <= PREC){
-            mount_x_new(p,x, lambda,ur,lr);
+    // xx[0] = lambda0;
+    // xx[1] = lambda1;
+    // gg[0] = lambda2 - lambda0;
+    // gg[1] = lambdaAnt - lambda1;
+
+    xx[0] = x0;
+    xx[1] = fx0;
+    gg[0] = fx0 - x0;
+    gg[1] = ffx0 - fx0;
+
+    // x = [x0, f(x0)]; % Vector of iterates x.
+    // g = f(x) - x; % Vector of residuals.
+
+    Gk[0] = gg[1] - gg[0];
+    Xk[0] = xx[1] - xx[0]; 
+
+    // Gk = gg[1] - gg[0];
+    // Xk = xx[1] - xx[0]; 
+    
+    // printf("lambs = %f - %f - %f - %f \n", lambda0, x0, fx0, ffx0 );
+
+    lambdaAnt = ffx0;
+
+    double result2;
+    while (k <= MAXITERS) {
+        mk = MIN(k, m);
+
+        gammaK = gg[k] / Gk[0];
+        result2 = (Xk[0] + Gk[0]) * gammaK;
+
+        // gammaK = gg[k] / Gk;
+        // result2 = (Xk + Gk) * gammaK;
+        
+        xx[k + 1] = xx[k] + gg[k] - result2;
+        
+        xis_quad_a(n, xx[k + 1],ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+        lambda = (Sbu + Sbap - r)/(Sbbp);
+        
+        // printf("teste = %f - %f - %f - %f - %f -%f - %f - %f - %f \n", lambda0, xx[k + 1], xx[k], gg[k], result2, Xk[0], Gk[0], gammaK, Sbbp);
+        if (fabs(lambda - lambdaAnt) <= PREC){
+            mount_x_a(p,x, lambda,ur,lr);
             break;
         }
+        
+        gg[k + 1] = lambda - xx[k + 1];
+        
+        Xk[k] = xx[k + 1] - xx[k];
+        Gk[k] = gg[k + 1] - gg[k];
 
-        n_iters++;
+        if (k >= m){
+            // Xk[m+1] = xx[k + 1] - xx[k];
+            // Gk[m+1] = gg[k + 1] - gg[k];
+            for (unsigned i =0; i <= m; i++){
+                Xk[i] = Xk[i+1];
+                Gk[i] = Gk[i+1];
+            }
+        }
+
+        // Xk = xx[k + 1] - xx[k];
+        // Gk = gg[k + 1] - gg[k];
+
+        lambdaAnt = lambda;
+        k++;
     }
 
     free(abp);
     free(bbp);
-    free(ur);
     free(lr);
+    free(ur);
     free(bu);
 
-    return n_iters;
+    return k+1;
 }

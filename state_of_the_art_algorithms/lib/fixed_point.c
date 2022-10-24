@@ -106,9 +106,9 @@ void xis_quad(unsigned n,
     *Sbbp = 0.0;
 
     for (unsigned i = 0; i < n; i++){
-        if (*lambda < ur[i])
+        if (*lambda <= ur[i])
             *Sbu += bu[i];
-        else if (*lambda > lr[i])
+        else if (*lambda >= lr[i])
                 *Sbl += bl[i];
             else{
                 *Sbap += abp[i];
@@ -136,9 +136,9 @@ void mount_x(cqk_problem *restrict p, double *restrict x, double lambda,
             double *restrict lr,double *restrict ur){
 
     for (unsigned i = 0; i < p->n; i++){
-        if (lambda > lr[i])
+        if (lambda >= lr[i])
             x[i] = p->low[i];
-        else if (lambda < ur[i])
+        else if (lambda <= ur[i])
                 x[i] = p->up[i];
             else
                 x[i] = ( p->a[i] - lambda * p->b[i] ) / p->d[i];

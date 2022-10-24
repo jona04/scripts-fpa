@@ -125,7 +125,7 @@ int newton(cqk_problem *restrict p, double *x0, double *x);
 /********** Algorithmic parameters **********/
 
 /* Maximum number of iterations for each method. */
-#define MAXITERS 100000
+#define MAXITERS 100
 
 /* Precision required in the stopping criteria, it is set very high to
    ensure that the problems are solved "exactly". */
