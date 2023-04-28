@@ -192,6 +192,8 @@ int fixed_point_ai(cqk_problem *restrict p, double *x) {
     double *restrict bu = (double *) malloc(n*sizeof(double));
 
     L0 = initial_multiplier_fixed_point_ai(p,&r,abp,bbp,ur,lr,bu);
+    xis_quad_ai(n, L0,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
+    L0 = (Sbu + Sbap - r)/(Sbbp);
     while (n_iters <= MAXITERS) {
         
         xis_quad_ai(n, L0,ur,lr,bu,abp,bbp, &Sbu, &Sbap, &Sbbp);
@@ -231,7 +233,7 @@ int fixed_point_ai(cqk_problem *restrict p, double *x) {
             mount_x_ai(p,x, L2, ur,lr);
             break;
         }
-        L0 = L1;
+        L0 = L2;
 
         n_iters++;
     }
@@ -241,6 +243,6 @@ int fixed_point_ai(cqk_problem *restrict p, double *x) {
     free(lr);
     free(ur);
     free(bu);
-
+    
     return n_iters;
 }

@@ -294,9 +294,9 @@ int main(int argc, char *argv[]) {
     printf("Projection type:%d\n", ptype);
 
     /* Total number of random tests to do. */
-    unsigned ntests = 5;
+    unsigned ntests = 10;
     /* Number of repetions for each test */
-    unsigned nreps = 3;
+    unsigned nreps = 10;
     nreps = nreps > 0 ? nreps : 1;
 
     /* Problem data */
@@ -324,6 +324,7 @@ int main(int argc, char *argv[]) {
         for (unsigned met = 0; met < n_methods; ++met)
             run_a_test(&p, methods[met], nreps, out, x);
         fprintf(out, "\n");
+        
     }
     free_cqk_problem(&p);
     return 0;

@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
     problem_type ptype; /* Code for the problem type */
     unsigned n;         /* Problem dimension */ 
     n = 2e6;
-    ptype = uncorrelated;
+    ptype = correlated;
 
     /* Problem data */
     cqk_problem p;
@@ -317,13 +317,13 @@ int main(int argc, char *argv[]) {
     run_a_test1(&p,x);
     end1 = clock();
     cpu_time_used1 = ((double) (end1 - start1)) / CLOCKS_PER_SEC;
-    printf("fun() took %f seconds to execute \n", cpu_time_used1);
+    printf("fun1 fpa() took %f seconds to execute \n", cpu_time_used1);
 
-    // start1 = clock();
-    // run_a_test11(&p,x);
-    // end1 = clock();
-    // cpu_time_used1 = ((double) (end1 - start1)) / CLOCKS_PER_SEC;
-    // printf("fun() took %f seconds to execute \n", cpu_time_used1);
+    start1 = clock();
+    run_a_test11(&p,x);
+    end1 = clock();
+    cpu_time_used1 = ((double) (end1 - start1)) / CLOCKS_PER_SEC;
+    printf("fun 11 new() took %f seconds to execute \n", cpu_time_used1);
 
 
     // start1 = clock();
@@ -336,13 +336,13 @@ int main(int argc, char *argv[]) {
     run_a_test3(&p,x);
     end1 = clock();
     cpu_time_used1 = ((double) (end1 - start1)) / CLOCKS_PER_SEC;
-    printf("fun() took %f seconds to execute \n", cpu_time_used1);
+    printf("fun 3 ai() took %f seconds to execute \n", cpu_time_used1);
 
     start1 = clock();
     run_a_test4(&p,x);
     end1 = clock();
     cpu_time_used1 = ((double) (end1 - start1)) / CLOCKS_PER_SEC;
-    printf("fun() took %f seconds to execute \n", cpu_time_used1);
+    printf("fun 4 a() took %f seconds to execute \n", cpu_time_used1);
 
     free_cqk_problem(&p);
 

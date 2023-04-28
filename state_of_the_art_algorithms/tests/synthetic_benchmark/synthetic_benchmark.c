@@ -303,9 +303,9 @@ int main(int argc, char *argv[]) {
     printf("Projection type:%d\n", ptype);
 
     /* Total number of random tests to do. */
-    unsigned ntests = 50;
+    unsigned ntests = 10;
     /* Number of repetions for each test */
-    unsigned nreps = 50;
+    unsigned nreps = 10;
     nreps = nreps > 0 ? nreps : 1;
 
     /* Problem data */

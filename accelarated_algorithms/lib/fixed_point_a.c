@@ -177,7 +177,7 @@ int fixed_point_a(cqk_problem *restrict p, double *x) {
     double Sbbp;
     
     unsigned mk;
-    int m = 3;
+    int m = 2;
 
     unsigned n = p->n;
     double r = p->r;

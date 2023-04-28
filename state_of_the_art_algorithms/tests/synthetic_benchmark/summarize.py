@@ -52,8 +52,8 @@ def screen_report(test, data):
             time_data = size_data[:,time[solver]]
             print ('%7d \t %.1f \t %d \t %d \t %.1f \t %.1f \t %.1f' % (
                 int(size), its_data.mean(), its_data.max(), its_data.min(), 
-                1000*time_data.mean(), 1000*time_data.max(), 
-                1000*time_data.min() ))
+                1*time_data.mean(), 1*time_data.max(), 
+                1*time_data.min() ))
         print ()
     print ()
 
@@ -98,7 +98,7 @@ TABLEEND=r'''
 \end{center}
 \end{table}
 '''
-TABLELINE = r'&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f  \!\!\!&\!\!\! %.1f & %d'
+TABLELINE = r'&\!\!\! %.1f \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %d  \!\!\!&\!\!\! %.3f  \!\!\!&\!\!\! %.3f  \!\!\!&\!\!\! %.3f & %d'
 ENDLINE = r'\\ \hline'
 FPAAFPA = r'& \multicolumn{7}{c||}{\bf \hspace{-8ex}FPA2} & \multicolumn{7}{c|}{\bf \hspace{-8ex}FPA} \\ \hline'
 NEWTONSECANT = r'& \multicolumn{7}{c||}{\bf Newton} & \multicolumn{7}{c|}{\bf Secant} \\ \hline'
@@ -117,7 +117,7 @@ def print_latex_table(size, solvers, data):
         time_data = np.delete(time_data, error_iterations)
         print (TABLELINE % (
             its_data.mean(), its_data.max(), its_data.min(), 
-            1000*time_data.mean(), 1000*time_data.max(), 1000*time_data.min(),len(error_iterations[0])
+            1*time_data.mean(), 1*time_data.max(), 1*time_data.min(),len(error_iterations[0])
             ))
     print (ENDLINE)
     
